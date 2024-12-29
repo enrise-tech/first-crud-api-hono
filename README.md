@@ -33,6 +33,8 @@ bash
 Copy code
 yarn install
 
+```
+
 3. Configure the Database
 This project uses SQLite by default. The database configuration is in drizzle.config.ts.
 
@@ -107,4 +109,26 @@ Copy code
 Feel free to contribute! Fork the repo, create a branch, and submit a pull request. Bug reports, feature requests, and feedback are always welcome. 😊
 
 
+📧 Contact
+Have questions or want to connect? Reach out to me:
 
+Twitter: @[enrise_tech](https://x.com/enrise_tech)
+YouTube: [Enrise Tech](https://www.youtube.com/@enrisetech)
+Email: enrisetech@gmail.com
+
+🎉 Acknowledgments
+Special thanks to:
+Aaron Saunders: https://x.com/aaronksaunders
+
+Video Resource that assisted me:
+https://www.youtube.com/watch?v=dWGsvnjcgCw&t=16s
+
+Github that assisted me:
+https://github.com/aaronksaunders/hono-drizzle-node-app-1
+
+The creators of Hono and Drizzle ORM for their awesome tools.
+The open-source community for making projects like this possible.
+
+🔗 Helpful Links
+Hono - https://hono.dev/
+Drizzle - https://orm.drizzle.team/
