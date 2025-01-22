@@ -17,10 +17,6 @@ describe('Tasks API with Sinon Stubs', () => {
 
     const data = await response.json();
 
-    console.log('data', data)
-
-    console.log('response', response);
-
     expect(response.status).toBe(200);
     expect(data).toEqual([
       { id: 1, title: 'Test Task', description: 'This is a test', userId: 1, status: 'pending' },
