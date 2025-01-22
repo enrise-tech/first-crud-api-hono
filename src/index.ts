@@ -3,6 +3,7 @@ import "dotenv/config";
 import { Hono } from 'hono'
 import { db } from "./db";
 import { tasks, users } from "./db/schema";
+import { TaskService } from './services/tasks';
 import {eq} from 'drizzle-orm';
 
 const app = new Hono()
@@ -52,21 +53,24 @@ app.put('/users/:id', async (c) => {
 
 
 
+// routes/tasks.ts
+
 app.get('/tasks', async (c) => {
   const userId = c.req.query('userId'); // Get the userId from query parameters
 
   let tasksList;
   if (userId) {
-    tasksList = await db.select().from(tasks).where(eq(tasks.userId, Number(userId))); // Filter tasks by userId
+    tasksList = await TaskService.getTasksByUserId(Number(userId)); // Use the service layer
     if (tasksList.length === 0) {
       return c.json({ message: `No tasks found for user with ID ${userId}` }, 404);
     }
   } else {
-    tasksList = await db.select().from(tasks); // Return all tasks
+    tasksList = await TaskService.getAllTasks(); // Use the service layer
   }
 
   return c.json(tasksList);
 });
+
 
 
 app.get('/tasks/:id', async (c) => {
