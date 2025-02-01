@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import { db } from "./db";
 import { tasks, users } from "./db/schema";
 import { TaskService } from "./services/tasks";
+import { UserService } from "./services/users";
+
 import { eq } from "drizzle-orm";
 
 const app = new Hono();
@@ -12,52 +14,38 @@ app.get("/", (c) => {
 });
 
 app.get("/users", async (c) => {
-  const allUsers = await db.select().from(users);
+  const allUsers = await UserService.getAllUsers();
   return c.json(allUsers);
 });
 
 app.get("/users/:id", async (c) => {
   const userId = c.req.param("id");
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, Number(userId)));
+  const user = await UserService.getUserById(Number(userId));
   return c.json(user);
 });
 
 app.post("/users", async (c) => {
   const { username, email, password } = await c.req.json();
-  const newUser = await db
-    .insert(users)
-    .values({
-      username,
-      email,
-      password,
-    })
-    .returning();
+  const newUser = await UserService.createUser(username, email, password);
   return c.json(newUser);
-});
-
-// Delete User
-app.delete("/users/:id", async (c) => {
-  const userId = c.req.param("id");
-  await db.delete(users).where(eq(users.id, Number(userId)));
-  return c.json({ message: "User deleted successfully" });
 });
 
 app.put("/users/:id", async (c) => {
   const userId = c.req.param("id");
   const { username, email, password } = await c.req.json();
-  const updatedUser = await db
-    .update(users)
-    .set({
-      username,
-      email,
-      password,
-    })
-    .where(eq(users.id, Number(userId)))
-    .returning();
+  const updatedUser = await UserService.updateUser(
+    Number(userId),
+    username,
+    email,
+    password
+  );
   return c.json(updatedUser);
+});
+
+app.delete("/users/:id", async (c) => {
+  const userId = c.req.param("id");
+  const response = await UserService.deleteUser(Number(userId));
+  return c.json(response);
 });
 
 // routes/tasks.ts
