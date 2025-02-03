@@ -14,6 +14,12 @@ export class UserService {
     return user[0] || null; // Return the first user or null if not found
   }
 
+  // create a get user by email function
+  static async getUserByEmail(email: string) {
+    const user = await db.select().from(users).where(eq(users.email, email));
+    return user[0] || null; // Return the first user or null if not found
+  }
+
   // Create a new user
   static async createUser(username: string, email: string, password: string) {
     const newUser = await db

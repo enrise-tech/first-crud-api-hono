@@ -1,16 +1,58 @@
 import "dotenv/config";
 import { Hono } from "hono";
-import { db } from "./db";
-import { tasks, users } from "./db/schema";
 import { TaskService } from "./services/tasks";
 import { UserService } from "./services/users";
-
-import { eq } from "drizzle-orm";
+import { verify, sign } from "hono/jwt";
+import argon2 from "argon2";
 
 const app = new Hono();
 
 app.get("/", (c) => {
   return c.text("Hello World!");
+});
+
+// create a users post endpoint using argon to hash the password
+app.post("/users", async (c) => {
+  const { username, email, password } = await c.req.json();
+
+  if (!username || !email || !password) {
+    return c.json({ message: "All fields are required" }, 400);
+  }
+
+  const hashedPassword = await argon2.hash(password);
+  const newUser = await UserService.createUser(username, email, hashedPassword);
+
+  return c.json({ message: "User created successfully", user: newUser });
+});
+
+app.post("/login", async (c) => {
+  const { email, password } = await c.req.json();
+
+  if (!email || !password) {
+    return c.json({ message: "Email and password are required" }, 400);
+  }
+
+  const user = await UserService.getUserByEmail(email);
+  if (!user) {
+    return c.json({ message: "Invalid credentials" }, 401);
+  }
+
+  const isMatch = await argon2.verify(user.password, password);
+
+  if (!isMatch) {
+    return c.json({ message: "Invalid credentials" }, 401);
+  }
+
+  const token = await sign(
+    {
+      id: user.id,
+      email: user.email,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    },
+    "secret"
+  );
+
+  return c.json({ message: "Login successful", token });
 });
 
 app.get("/users", async (c) => {
@@ -22,12 +64,6 @@ app.get("/users/:id", async (c) => {
   const userId = c.req.param("id");
   const user = await UserService.getUserById(Number(userId));
   return c.json(user);
-});
-
-app.post("/users", async (c) => {
-  const { username, email, password } = await c.req.json();
-  const newUser = await UserService.createUser(username, email, password);
-  return c.json(newUser);
 });
 
 app.put("/users/:id", async (c) => {
