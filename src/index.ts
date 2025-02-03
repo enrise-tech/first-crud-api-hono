@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { Hono } from "hono";
-import { db } from "./db";
-import { tasks, users } from "./db/schema";
 import { TaskService } from "./services/tasks";
-import { eq } from "drizzle-orm";
+import { UserService } from "./services/users";
+import { verify, sign } from "hono/jwt";
+import argon2 from "argon2";
 
 const app = new Hono();
 
@@ -11,53 +11,77 @@ app.get("/", (c) => {
   return c.text("Hello World!");
 });
 
+// create a users post endpoint using argon to hash the password
+app.post("/users", async (c) => {
+  const { username, email, password } = await c.req.json();
+
+  if (!username || !email || !password) {
+    return c.json({ message: "All fields are required" }, 400);
+  }
+
+  const hashedPassword = await argon2.hash(password);
+  const newUser = await UserService.createUser(username, email, hashedPassword);
+
+  return c.json({ message: "User created successfully", user: newUser });
+});
+
+app.post("/login", async (c) => {
+  const { email, password } = await c.req.json();
+
+  if (!email || !password) {
+    return c.json({ message: "Email and password are required" }, 400);
+  }
+
+  const user = await UserService.getUserByEmail(email);
+  if (!user) {
+    return c.json({ message: "Invalid credentials" }, 401);
+  }
+
+  const isMatch = await argon2.verify(user.password, password);
+
+  if (!isMatch) {
+    return c.json({ message: "Invalid credentials" }, 401);
+  }
+
+  const token = await sign(
+    {
+      id: user.id,
+      email: user.email,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    },
+    "secret"
+  );
+
+  return c.json({ message: "Login successful", token });
+});
+
 app.get("/users", async (c) => {
-  const allUsers = await db.select().from(users);
+  const allUsers = await UserService.getAllUsers();
   return c.json(allUsers);
 });
 
 app.get("/users/:id", async (c) => {
   const userId = c.req.param("id");
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, Number(userId)));
+  const user = await UserService.getUserById(Number(userId));
   return c.json(user);
-});
-
-app.post("/users", async (c) => {
-  const { username, email, password } = await c.req.json();
-  const newUser = await db
-    .insert(users)
-    .values({
-      username,
-      email,
-      password,
-    })
-    .returning();
-  return c.json(newUser);
-});
-
-// Delete User
-app.delete("/users/:id", async (c) => {
-  const userId = c.req.param("id");
-  await db.delete(users).where(eq(users.id, Number(userId)));
-  return c.json({ message: "User deleted successfully" });
 });
 
 app.put("/users/:id", async (c) => {
   const userId = c.req.param("id");
   const { username, email, password } = await c.req.json();
-  const updatedUser = await db
-    .update(users)
-    .set({
-      username,
-      email,
-      password,
-    })
-    .where(eq(users.id, Number(userId)))
-    .returning();
+  const updatedUser = await UserService.updateUser(
+    Number(userId),
+    username,
+    email,
+    password
+  );
   return c.json(updatedUser);
+});
+
+app.delete("/users/:id", async (c) => {
+  const userId = c.req.param("id");
+  const response = await UserService.deleteUser(Number(userId));
+  return c.json(response);
 });
 
 // routes/tasks.ts
