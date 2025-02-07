@@ -1,11 +1,14 @@
 // routes/tasks.ts
 import { Hono } from "hono";
 import { TaskService } from "../services/tasks";
+import { isAuthenticated } from "../middleware/auth";
+import { isOwner } from "../middleware/isOwner";
 
 const taskRouter = new Hono();
 
-taskRouter.get("/", async (c) => {
+taskRouter.get("/", isAuthenticated, isOwner, async (c) => {
   const userId = c.req.query("userId");
+  const authUser = c.get("user");
 
   let tasksList;
   if (userId) {
