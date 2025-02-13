@@ -13,7 +13,6 @@ export const isAuthenticated = async (c: AuthenticatedContext, next: Next) => {
   const token = authHeader.split(" ")[1];
   try {
     const decoded = await verify(token, "secret");
-    console.log("decoded", decoded);
     if (!decoded) {
       return c.json({ message: "Unauthorized: Invalid token" }, 401);
     }
