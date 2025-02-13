@@ -11,6 +11,5 @@ app.get("/", (c) => {
 
 app.route("/users", userRouter);
 app.route("/tasks", taskRouter);
-// routes above
 
 export default app;
