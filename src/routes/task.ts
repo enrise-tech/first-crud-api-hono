@@ -6,9 +6,10 @@ import { isOwner } from "../middleware/isOwner";
 
 const taskRouter = new Hono();
 
-taskRouter.get("/", isAuthenticated, isOwner, async (c) => {
+taskRouter.use("*", isAuthenticated, isOwner);
+
+taskRouter.get("/", async (c) => {
   const userId = c.req.query("userId");
-  const authUser = c.get("user");
 
   let tasksList;
   if (userId) {
